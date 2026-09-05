@@ -57,15 +57,17 @@ def _entity(domains: list[str]) -> selector.EntitySelector:
 def _number(
     minimum: float, maximum: float, step: float, unit: str | None = None
 ) -> selector.NumberSelector:
-    return selector.NumberSelector(
-        selector.NumberSelectorConfig(
-            min=minimum,
-            max=maximum,
-            step=step,
-            unit_of_measurement=unit,
-            mode=selector.NumberSelectorMode.BOX,
-        )
-    )
+    # unit_of_measurement se musí úplně vynechat, ne poslat jako None -
+    # selector ho validuje proti str a None mu shodí celý formulář
+    config: dict[str, Any] = {
+        "min": minimum,
+        "max": maximum,
+        "step": step,
+        "mode": selector.NumberSelectorMode.BOX,
+    }
+    if unit is not None:
+        config["unit_of_measurement"] = unit
+    return selector.NumberSelector(selector.NumberSelectorConfig(**config))
 
 
 ENTITY_FIELDS = (
@@ -88,8 +90,14 @@ def entities_schema(defaults: dict[str, Any]) -> vol.Schema:
     """Krok 1: napojení na existující entity."""
 
     def d(key: str) -> dict[str, Any]:
+        """Předvyplnění formuláře.
+
+        Musí to být suggested_value, ne default: s defaultem by voluptuous
+        vymazané volitelné pole zase doplnil starou hodnotou a entita by
+        se nedala odebrat.
+        """
         value = defaults.get(key)
-        return {"default": value} if value else {}
+        return {"description": {"suggested_value": value}} if value else {}
 
     return vol.Schema(
         {
@@ -115,8 +123,10 @@ def entities_schema(defaults: dict[str, Any]) -> vol.Schema:
             ),
             vol.Required(
                 CONF_GRID_EXPORT_POSITIVE,
-                default=defaults.get(
-                    CONF_GRID_EXPORT_POSITIVE, DEFAULTS[CONF_GRID_EXPORT_POSITIVE]
+                default=bool(
+                    defaults.get(
+                        CONF_GRID_EXPORT_POSITIVE, DEFAULTS[CONF_GRID_EXPORT_POSITIVE]
+                    )
                 ),
             ): selector.BooleanSelector(),
         }

@@ -166,10 +166,16 @@ karty na dashboardu.
 
 ```bash
 python3 tests/simulate.py 14
+python3 tests/test_config_flow.py
 ```
 
-Simuluje dům s FVE, baterií a bojlerem po minutách. Integrace v simulaci vidí
-jen to, co by viděla v HA, a musí si parametry odvodit sama. Proběhnou dva
-scénáře — běžný provoz se sítí a ostrovní provoz, kde střídač při plné baterii
-ořezává výrobu. Na konci se naučené porovná se skutečným; když se něco rozejde
-o víc než 20 %, skript skončí nenulovým kódem.
+`simulate.py` simuluje dům s FVE, baterií a bojlerem po minutách. Integrace
+v simulaci vidí jen to, co by viděla v HA, a musí si parametry odvodit sama.
+Proběhnou dva scénáře — běžný provoz se sítí a ostrovní provoz, kde střídač
+při plné baterii ořezává výrobu. Na konci se naučené porovná se skutečným;
+když se něco rozejde o víc než 20 %, skript skončí nenulovým kódem.
+
+`test_config_flow.py` postaví oba kroky průvodce a prožene každý selektor
+stejnou validací, jakou používá Home Assistant. Chybný selektor jinak shodí
+celý krok formuláře a uživatel uvidí jen „Unknown error occurred" — skutečný
+důvod je až v logu HA.
