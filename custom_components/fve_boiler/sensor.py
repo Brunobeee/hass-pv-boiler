@@ -50,6 +50,7 @@ def _status_attrs(c: FveBoilerCoordinator) -> dict[str, Any]:
         "zdroj_vypoctu": d.free_power_source,
         "doba_ohrevu_min": round(d.heating_minutes_needed),
         "blokovano_casovacem": d.blocked_by_timer,
+        "orez_vyroby": d.pv_curtailed,
     }
     if d.latest_start is not None:
         attrs["nejzazsi_start"] = d.latest_start.isoformat()
@@ -89,6 +90,7 @@ SENSORS: tuple[FveSensorDescription, ...] = (
             "vypnuto",
             "necinnost",
             "ohrev_z_prebytku",
+            "ohrev_z_oriznute_vyroby",
             "ohrev_z_baterie",
             "nouzovy_ohrev",
             "antilegionella",

@@ -45,7 +45,9 @@
           "allow_grid_backup": "Povolit dohřev ze sítě",
           "legionella_day": "Antilegionella - interval",
           "legionella_temp": "Antilegionella - teplota",
-          "scan_interval": "Interval vyhodnocování"
+          "scan_interval": "Interval vyhodnocování",
+          "offgrid": "Ostrovní provoz (off-grid)",
+          "curtail_soc": "SoC, od kterého střídač ořezává výrobu"
         },
         "data_description": {
           "target_temp": "Kam se nahřívá, když je slunce zadarmo.",
@@ -53,14 +55,17 @@
           "min_soc": "Do téhle úrovně má baterie přednost před bojlerem.",
           "start_threshold": "0,85 znamená start při přebytku 85 % příkonu spirály. Níž = topí častěji, ale kousek dobere baterie.",
           "deadline_hour": "Do téhle hodiny musí být voda aspoň na komfortním minimu.",
-          "legionella_day": "0 = funkce vypnutá."
+          "legionella_day": "0 = funkce vypnutá.",
+          "offgrid": "Zapněte, když je střídač odpojený od sítě. Přetok ani dohřev ze sítě pak neexistují a integrace místo toho pozná, že se při plné baterii zahazuje výroba.",
+          "curtail_soc": "Nad touto úrovní se plná baterie bere jako důkaz, že střídač ořezává výrobu, a bojler dostane přednost před zahozenou energií."
         }
       }
     },
     "error": {
       "min_above_target": "Minimální teplota musí být nižší než cílová.",
       "target_above_max": "Cílová teplota nesmí přesáhnout bezpečnostní maximum.",
-      "reserve_above_min": "Rezerva baterie musí být nižší než hranice pro topení z přebytku."
+      "reserve_above_min": "Rezerva baterie musí být nižší než hranice pro topení z přebytku.",
+      "curtail_below_min_soc": "Práh ořezu výroby musí být vyšší než hranice pro topení z přebytku."
     },
     "abort": {
       "already_configured": "Tato instance je už nastavená."
@@ -112,32 +117,59 @@
           "allow_grid_backup": "Povolit dohřev ze sítě",
           "legionella_day": "Antilegionella - interval",
           "legionella_temp": "Antilegionella - teplota",
-          "scan_interval": "Interval vyhodnocování"
+          "scan_interval": "Interval vyhodnocování",
+          "offgrid": "Ostrovní provoz (off-grid)",
+          "curtail_soc": "SoC, od kterého střídač ořezává výrobu"
+        },
+        "data_description": {
+          "offgrid": "Zapněte, když je střídač odpojený od sítě. Přetok ani dohřev ze sítě pak neexistují a integrace místo toho pozná, že se při plné baterii zahazuje výroba.",
+          "curtail_soc": "Nad touto úrovní se plná baterie bere jako důkaz, že střídač ořezává výrobu, a bojler dostane přednost před zahozenou energií."
         }
       }
     },
     "error": {
       "min_above_target": "Minimální teplota musí být nižší než cílová.",
       "target_above_max": "Cílová teplota nesmí přesáhnout bezpečnostní maximum.",
-      "reserve_above_min": "Rezerva baterie musí být nižší než hranice pro topení z přebytku."
+      "reserve_above_min": "Rezerva baterie musí být nižší než hranice pro topení z přebytku.",
+      "curtail_below_min_soc": "Práh ořezu výroby musí být vyšší než hranice pro topení z přebytku."
     }
   },
   "entity": {
     "switch": {
-      "automatika": { "name": "Automatika" }
+      "automatika": {
+        "name": "Automatika"
+      }
     },
     "binary_sensor": {
-      "topi": { "name": "Topí" },
-      "hrozi_dohrev": { "name": "Hrozí dohřev ze sítě" },
-      "ceka_na_slunce": { "name": "Čeká na slunce" }
+      "topi": {
+        "name": "Topí"
+      },
+      "hrozi_dohrev": {
+        "name": "Hrozí dohřev ze sítě"
+      },
+      "ceka_na_slunce": {
+        "name": "Čeká na slunce"
+      }
     },
     "number": {
-      "cilova_teplota": { "name": "Cílová teplota" },
-      "minimalni_teplota": { "name": "Minimální teplota" },
-      "min_soc_baterie": { "name": "Minimální SoC baterie" },
-      "rezerva_baterie": { "name": "Rezerva baterie" },
-      "nejzazsi_hodina": { "name": "Nejzazší hodina dohřevu" },
-      "prah_startu": { "name": "Práh startu" }
+      "cilova_teplota": {
+        "name": "Cílová teplota"
+      },
+      "minimalni_teplota": {
+        "name": "Minimální teplota"
+      },
+      "min_soc_baterie": {
+        "name": "Minimální SoC baterie"
+      },
+      "rezerva_baterie": {
+        "name": "Rezerva baterie"
+      },
+      "nejzazsi_hodina": {
+        "name": "Nejzazší hodina dohřevu"
+      },
+      "prah_startu": {
+        "name": "Práh startu"
+      }
     },
     "sensor": {
       "stav": {
@@ -153,22 +185,49 @@
           "ceka_na_slunce": "Čeká na slunce",
           "nahrato": "Nahřáto",
           "blokovano": "Blokováno",
-          "chybi_data": "Chybí data"
+          "chybi_data": "Chybí data",
+          "ohrev_z_oriznute_vyroby": "Ohřev z ořezané výroby"
         }
       },
-      "potreba_energie": { "name": "Potřeba energie" },
-      "ocekavany_prebytek": { "name": "Očekávaný přebytek do večera" },
-      "volny_vykon": { "name": "Volný výkon" },
-      "doba_ohrevu": { "name": "Potřebná doba ohřevu" },
-      "naucen_prikon": { "name": "Naučený příkon spirály" },
-      "naucena_kapacita": { "name": "Naučená kapacita nádrže" },
-      "odhad_objemu": { "name": "Odhadovaný objem nádrže" },
-      "naucene_ztraty": { "name": "Naučené tepelné ztráty" },
-      "korekce_predpovedi": { "name": "Přesnost předpovědi" },
-      "duvera_modelu": { "name": "Naučenost modelu" },
-      "ohrev_z_prebytku_celkem": { "name": "Ohřev ze slunce celkem" },
-      "ohrev_ze_site_celkem": { "name": "Ohřev ze sítě celkem" },
-      "podil_slunce": { "name": "Podíl slunce na ohřevu" }
+      "potreba_energie": {
+        "name": "Potřeba energie"
+      },
+      "ocekavany_prebytek": {
+        "name": "Očekávaný přebytek do večera"
+      },
+      "volny_vykon": {
+        "name": "Volný výkon"
+      },
+      "doba_ohrevu": {
+        "name": "Potřebná doba ohřevu"
+      },
+      "naucen_prikon": {
+        "name": "Naučený příkon spirály"
+      },
+      "naucena_kapacita": {
+        "name": "Naučená kapacita nádrže"
+      },
+      "odhad_objemu": {
+        "name": "Odhadovaný objem nádrže"
+      },
+      "naucene_ztraty": {
+        "name": "Naučené tepelné ztráty"
+      },
+      "korekce_predpovedi": {
+        "name": "Přesnost předpovědi"
+      },
+      "duvera_modelu": {
+        "name": "Naučenost modelu"
+      },
+      "ohrev_z_prebytku_celkem": {
+        "name": "Ohřev ze slunce celkem"
+      },
+      "ohrev_ze_site_celkem": {
+        "name": "Ohřev ze sítě celkem"
+      },
+      "podil_slunce": {
+        "name": "Podíl slunce na ohřevu"
+      }
     }
   },
   "services": {
@@ -176,27 +235,54 @@
       "name": "Ruční boost",
       "description": "Dočasně nahřeje bojler bez ohledu na přebytek.",
       "fields": {
-        "entry_id": { "name": "Instance", "description": "Nevyplněno = všechny instance." },
-        "duration": { "name": "Doba", "description": "Jak dlouho má boost platit." },
-        "target_temp": { "name": "Cílová teplota", "description": "Nevyplněno = běžný cíl." }
+        "entry_id": {
+          "name": "Instance",
+          "description": "Nevyplněno = všechny instance."
+        },
+        "duration": {
+          "name": "Doba",
+          "description": "Jak dlouho má boost platit."
+        },
+        "target_temp": {
+          "name": "Cílová teplota",
+          "description": "Nevyplněno = běžný cíl."
+        }
       }
     },
     "reset_learning": {
       "name": "Vynulovat učení",
       "description": "Zahodí naučený model a začne od nuly.",
       "fields": {
-        "entry_id": { "name": "Instance", "description": "Nevyplněno = všechny instance." }
+        "entry_id": {
+          "name": "Instance",
+          "description": "Nevyplněno = všechny instance."
+        }
       }
     },
     "set_model": {
       "name": "Nastavit parametry modelu",
       "description": "Předvyplní parametry, které model jinak zjišťuje sám.",
       "fields": {
-        "entry_id": { "name": "Instance", "description": "Nevyplněno = všechny instance." },
-        "heater_power_w": { "name": "Příkon spirály", "description": "Ve wattech." },
-        "tank_liters": { "name": "Objem nádrže", "description": "V litrech." },
-        "tank_wh_per_k": { "name": "Tepelná kapacita", "description": "Ve Wh na kelvin." },
-        "loss_w_per_k": { "name": "Tepelné ztráty", "description": "Ve W na kelvin rozdílu." }
+        "entry_id": {
+          "name": "Instance",
+          "description": "Nevyplněno = všechny instance."
+        },
+        "heater_power_w": {
+          "name": "Příkon spirály",
+          "description": "Ve wattech."
+        },
+        "tank_liters": {
+          "name": "Objem nádrže",
+          "description": "V litrech."
+        },
+        "tank_wh_per_k": {
+          "name": "Tepelná kapacita",
+          "description": "Ve Wh na kelvin."
+        },
+        "loss_w_per_k": {
+          "name": "Tepelné ztráty",
+          "description": "Ve W na kelvin rozdílu."
+        }
       }
     }
   }

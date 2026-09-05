@@ -155,6 +155,18 @@ class House:
         }
 
 
+def offgrid_pv_seen(pv_potential: float, house: "House", truth: Truth, load_w: float,
+                    dt_h: float) -> float:
+    """Co ukáže senzor FVE v ostrovním provozu.
+
+    Střídač bez sítě nemá kam vyvést přebytek, takže výrobu ořízne na to, co
+    zrovna spotřebuje dům a co se vejde do baterie.
+    """
+    room_wh = (100.0 - house.soc) / 100.0 * truth.battery_kwh * 1000.0
+    absorbable = load_w + min(truth.battery_max_w, room_wh / dt_h if dt_h > 0 else 0.0)
+    return min(pv_potential, max(0.0, absorbable))
+
+
 def run(days: int = 7, verbose: bool = True) -> tuple[LearnedModel, dict]:
     truth = Truth()
     house = House(truth)
@@ -177,7 +189,6 @@ def run(days: int = 7, verbose: bool = True) -> tuple[LearnedModel, dict]:
     )
 
     start = datetime(2026, 6, 1, 0, 0)
-    step = timedelta(minutes=1)
     dt_h = 1.0 / 60.0
     last_change: datetime | None = None
     clouds = [1.0, 0.95, 0.30, 0.25, 1.0, 0.7, 1.0, 0.4, 0.9, 1.0]
@@ -250,6 +261,75 @@ def run(days: int = 7, verbose: bool = True) -> tuple[LearnedModel, dict]:
     return model, stats
 
 
+def run_offgrid(days: int = 14) -> dict:
+    """Ostrovní provoz: síť neexistuje a při plné baterii se výroba ořezává."""
+    truth = Truth()
+    house = House(truth, tank_c=45.0, soc=85.0)
+    model = LearnedModel()
+    learner = Learner(model)
+    settings = Settings(
+        battery_capacity_kwh=truth.battery_kwh,
+        allow_grid_backup=False,
+        offgrid=True,
+        curtail_soc=95.0,
+    )
+
+    start = datetime(2026, 6, 1)
+    dt_h = 1.0 / 60.0
+    last_change: datetime | None = None
+    clouds = [1.0, 0.95, 0.30, 0.25, 1.0, 0.7, 1.0, 0.4, 0.9, 1.0, 0.85, 0.5, 1.0, 0.95]
+    curtailed_min = 0
+    wasted_wh = 0.0
+    states: dict[str, int] = {}
+
+    for day in range(days):
+        cloud = clouds[day % len(clouds)]
+        day_start = start + timedelta(days=day)
+        forecast = day_forecast_wh(day_start, truth, cloud)
+
+        for minute in range(24 * 60):
+            t = day_start + timedelta(minutes=minute)
+            pv_potential = pv_power(t, truth, cloud)
+            load_w = HOUSE[t.hour] + (truth.heater_w if house.heater_on else 0.0)
+            pv_seen = offgrid_pv_seen(pv_potential, house, truth, load_w, dt_h)
+            if pv_seen < pv_potential - 50:
+                curtailed_min += 1
+                wasted_wh += (pv_potential - pv_seen) * dt_h
+
+            phys = house.step(t, dt_h, cloud)
+            remaining_wh = sum(forecast[t.hour + 1 :]) + forecast[t.hour] * (
+                1.0 - t.minute / 60.0
+            )
+            inp = Inputs(
+                now=t,
+                heater_on=house.heater_on,
+                tank_temp=round(house.tank_c, 1),
+                ambient_temp=truth.ambient_c,
+                pv_power_w=pv_seen,
+                battery_soc=round(house.soc, 1),
+                battery_power_w=phys["battery_w"],
+                house_load_w=load_w,
+                boiler_power_w=phys["boiler"] if phys["boiler"] > 0 else 0.0,
+                forecast_remaining_wh=remaining_wh,
+            )
+            decision = decide(inp, model, settings, last_change=last_change)
+            learner.update(inp, pv_curtailed=decision.pv_curtailed)
+            if decision.heat != house.heater_on:
+                house.heater_on = decision.heat
+                last_change = t
+            states[decision.state] = states.get(decision.state, 0) + 1
+
+    return {
+        "model": model,
+        "house": house,
+        "curtailed_min": curtailed_min,
+        "wasted_wh": wasted_wh,
+        "states": states,
+        "truth": truth,
+        "days": days,
+    }
+
+
 def main() -> int:
     days = int(sys.argv[1]) if len(sys.argv) > 1 else 7
     model, stats = run(days)
@@ -283,6 +363,27 @@ def main() -> int:
 
     print("\nprofil odběru TUV [Wh/h]:")
     print("  " + " ".join(f"{h:02d}:{v:4.0f}" for h, v in enumerate(model.usage_wh_by_hour) if v > 20))
+
+    # --- ostrovní provoz ---------------------------------------------------
+    off = run_offgrid(days)
+    om: LearnedModel = off["model"]
+    oh: House = off["house"]
+    otruth: Truth = off["truth"]
+    print(f"\n--- ostrovní provoz ({days} dní) ---")
+    print(f"minut s ořezanou výrobou: {off['curtailed_min']}, "
+          f"zahozeno {off['wasted_wh'] / 1000:.0f} kWh")
+    print(f"ohřev {oh.boiler_wh / 1000:.1f} kWh, nádrž na konci {oh.tank_c:.1f} °C")
+
+    cap_err = abs(om.tank_wh_per_k - otruth.wh_per_k) / otruth.wh_per_k * 100.0
+    bias_err = abs(om.forecast_bias - 1.0 / otruth.forecast_optimism) * otruth.forecast_optimism * 100.0
+    for name, err in (("kapacita nádrže", cap_err), ("korekce předpovědi", bias_err)):
+        flag = "OK " if err < 20 else "!! "
+        ok &= err < 20
+        print(f"{flag}{name:26s} chyba {err:5.1f} %  "
+              f"(ořezané hodiny se do učení předpovědi nesmí započítat)")
+
+    top = sorted(off["states"].items(), key=lambda kv: -kv[1])[:4]
+    print("stavy: " + ", ".join(f"{k}:{v}" for k, v in top))
 
     return 0 if ok else 1
 

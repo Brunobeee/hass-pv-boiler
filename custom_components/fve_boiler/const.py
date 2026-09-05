@@ -41,6 +41,8 @@ ENTITY_KEYS: Final = (
 
 # --- konfigurace: parametry ---
 CONF_GRID_EXPORT_POSITIVE: Final = "grid_export_positive"
+CONF_OFFGRID: Final = "offgrid"
+CONF_CURTAIL_SOC: Final = "curtail_soc"
 CONF_BATTERY_CAPACITY: Final = "battery_capacity_kwh"
 CONF_TARGET_TEMP: Final = "target_temp"
 CONF_MIN_TEMP: Final = "min_temp"
@@ -59,6 +61,8 @@ CONF_LEGIONELLA_TEMP: Final = "legionella_temp"
 
 DEFAULTS: Final[dict] = {
     CONF_GRID_EXPORT_POSITIVE: False,
+    CONF_OFFGRID: False,
+    CONF_CURTAIL_SOC: 95.0,
     CONF_BATTERY_CAPACITY: 10.0,
     CONF_TARGET_TEMP: 60.0,
     CONF_MIN_TEMP: 42.0,
@@ -84,6 +88,7 @@ STATE_HEAT_BATTERY: Final = "ohrev_z_baterie"
 STATE_HEAT_FORCED: Final = "nouzovy_ohrev"
 STATE_HEAT_LEGIONELLA: Final = "antilegionella"
 STATE_HEAT_BOOST: Final = "rucni_boost"
+STATE_HEAT_CURTAILED: Final = "ohrev_z_oriznute_vyroby"
 STATE_WAIT_SUN: Final = "ceka_na_slunce"
 STATE_SATISFIED: Final = "nahrato"
 STATE_BLOCKED: Final = "blokovano"

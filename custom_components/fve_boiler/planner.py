@@ -13,6 +13,7 @@ from typing import Any
 
 from .const import (
     STATE_BLOCKED,
+    STATE_HEAT_CURTAILED,
     STATE_HEAT_BATTERY,
     STATE_HEAT_BOOST,
     STATE_HEAT_FORCED,
@@ -28,6 +29,12 @@ from .model import LearnedModel
 
 # o kolik procent SoC smí spadnout, než se běžící ohřev přeruší
 SOC_HYSTERESIS = 6.0
+# v off-gridu reagujeme na pokles SoC ostřeji - není kam sáhnout pro dokrytí
+SOC_HYSTERESIS_OFFGRID = 2.0
+# nabíjecí výkon, pod kterým plnou baterii považujeme za "už nic nepobere"
+CHARGE_IDLE_W = 300.0
+# o kolik % SoC klesne práh ořezu, když už bojler běží (proti kmitání)
+CURTAIL_HYSTERESIS = 8.0
 
 
 @dataclass
@@ -68,6 +75,9 @@ class Settings:
     battery_capacity_kwh: float = 10.0
     legionella_days: int = 7
     legionella_temp: float = 65.0
+    # ostrovní provoz: síť neexistuje, přebytek se při plné baterii zahazuje
+    offgrid: bool = False
+    curtail_soc: float = 95.0
 
 
 @dataclass
@@ -86,7 +96,29 @@ class Decision:
     heating_minutes_needed: float = 0.0
     latest_start: datetime | None = None
     blocked_by_timer: bool = False
+    pv_curtailed: bool = False
     details: dict[str, Any] = field(default_factory=dict)
+
+
+def is_pv_curtailed(inp: Inputs, settings: Settings) -> bool:
+    """Ořezává střídač výrobu, protože ji není kam dát?
+
+    V ostrovním provozu se přebytek nemá kam vyvést, takže při plné baterii
+    střídač jednoduše sníží výrobu. Senzor výkonu FVE pak ukazuje jen aktuální
+    spotřebu, ne to, co panely umí - volný výkon z něj spočítat nejde a bez
+    téhle detekce by bojler zůstal stát právě když je energie zdarma nejvíc.
+    """
+    if not settings.offgrid or inp.battery_soc is None:
+        return False
+
+    threshold = settings.curtail_soc - (CURTAIL_HYSTERESIS if inp.heater_on else 0.0)
+    if inp.battery_soc < threshold:
+        return False
+
+    # plná baterie, která se skoro nenabíjí, znamená nevyužitý potenciál panelů
+    if inp.battery_power_w is None:
+        return True
+    return inp.battery_power_w < CHARGE_IDLE_W
 
 
 def compute_free_power(inp: Inputs, model: LearnedModel, settings: Settings) -> tuple[float, str]:
@@ -107,10 +139,16 @@ def compute_free_power(inp: Inputs, model: LearnedModel, settings: Settings) -> 
             else model.heater_power_w
         )
 
+    if is_pv_curtailed(inp, settings):
+        # Kolik panely doopravdy umí, se změřit nedá - jistotu máme jen v tom,
+        # že se energie zahazuje. Vrátíme příkon spirály, ať se bojler rozjede;
+        # když panely nestačí, SoC klesne a hystereze ohřev zase ukončí.
+        return max(model.heater_power_w, boiler_now_w), "orez-vyroby"
+
     soc = inp.battery_soc
     battery_has_room = soc is None or soc >= settings.min_soc
 
-    if inp.grid_power_w is not None:
+    if inp.grid_power_w is not None and not settings.offgrid:
         export_w = max(0.0, -inp.grid_power_w)
         if battery_has_room and inp.battery_power_w is not None:
             charge_w = max(0.0, inp.battery_power_w)
@@ -167,6 +205,7 @@ def decide(
 ) -> Decision:
     """Hlavní rozhodovací automat."""
     d = Decision()
+    d.pv_curtailed = is_pv_curtailed(inp, settings)
     d.free_power_w, d.free_power_source = compute_free_power(inp, model, settings)
     d.expected_surplus_wh = expected_surplus_wh(inp, model, settings)
 
@@ -265,20 +304,36 @@ def decide(
 
     # hystereze i na SoC: baterie se běžícím bojlerem nabíjí pomaleji a bez
     # tohohle by systém kmital kolem prahu s periodou pár minut
-    soc_floor = settings.min_soc - (SOC_HYSTERESIS if inp.heater_on else 0.0)
+    soc_slack = SOC_HYSTERESIS_OFFGRID if settings.offgrid else SOC_HYSTERESIS
+    soc_floor = settings.min_soc - (soc_slack if inp.heater_on else 0.0)
     soc_ok = soc is None or soc >= soc_floor
     if below_min and soc is not None and soc > settings.reserve_soc:
+        soc_ok = True
+    if d.pv_curtailed:
+        # baterie je plná, přednost už dostala; energie by se jinak zahodila
         soc_ok = True
 
     if d.free_power_w >= threshold and soc_ok:
         d.heat = True
-        d.state = STATE_HEAT_LEGIONELLA if legionella_mode else STATE_HEAT_SURPLUS
-        d.reason = (
-            f"Přebytek {d.free_power_w:.0f} W ≥ práh {threshold:.0f} W "
-            f"(zdroj: {d.free_power_source})."
-        )
-        if soc is not None:
-            d.reason += f" Baterie {soc:.0f} %."
+        if legionella_mode:
+            d.state = STATE_HEAT_LEGIONELLA
+        elif d.pv_curtailed:
+            d.state = STATE_HEAT_CURTAILED
+        else:
+            d.state = STATE_HEAT_SURPLUS
+
+        if d.pv_curtailed:
+            d.reason = (
+                f"Baterie {soc:.0f} % je plná a střídač ořezává výrobu - "
+                f"energie by přišla vniveč, topím."
+            )
+        else:
+            d.reason = (
+                f"Přebytek {d.free_power_w:.0f} W ≥ práh {threshold:.0f} W "
+                f"(zdroj: {d.free_power_source})."
+            )
+            if soc is not None:
+                d.reason += f" Baterie {soc:.0f} %."
         return d
 
     if not soc_ok and d.free_power_w >= threshold:
@@ -321,6 +376,18 @@ def decide(
             d.reason = (
                 f"Slunce nestačí (chybí {d.deficit_wh:.0f} Wh), dohřívám na "
                 f"{backup_target:.0f} °C z baterie ({soc:.0f} %)."
+            )
+            return d
+
+        if settings.offgrid:
+            # ostrovní provoz: mimo baterii není odkud brát
+            d.state = STATE_BLOCKED
+            d.reason = (
+                f"Voda je studená ({inp.tank_temp:.1f} °C), ale baterie "
+                f"{soc:.0f} % je na rezervě {settings.reserve_soc:.0f} % - "
+                f"v ostrovním provozu není odkud dohřát, čekám na slunce."
+                if soc is not None
+                else "Chybí údaj o baterii, v ostrovním provozu radši netopím."
             )
             return d
 

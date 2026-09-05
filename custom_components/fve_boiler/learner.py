@@ -40,6 +40,7 @@ class Learner:
         self._hour_actual_wh: float = 0.0
         self._hour_forecast_start: float | None = None
         self._hour_usage_wh: float = 0.0
+        self._hour_curtailed: bool = False
 
     def reset(self) -> None:
         self._cycle = None
@@ -49,9 +50,18 @@ class Learner:
 
     # ------------------------------------------------------------------
     def update(
-        self, inp: Inputs, *, heating_from_surplus: bool = True, legionella_temp: float = 65.0
+        self,
+        inp: Inputs,
+        *,
+        heating_from_surplus: bool = True,
+        legionella_temp: float = 65.0,
+        pv_curtailed: bool = False,
     ) -> bool:
         """Zpracuje jeden vzorek. Vrací True, pokud se model změnil."""
+        if pv_curtailed:
+            # Střídač právě ořezává výrobu, takže senzor FVE neukazuje potenciál
+            # panelů. Hodina s ořezem by předpověď falešně shodila dolů.
+            self._hour_curtailed = True
         now = inp.now
         if self._last_ts is None:
             self._last_ts = now
@@ -329,7 +339,11 @@ class Learner:
 
         dirty = False
         closed_hour = self._hour_bucket if self._hour_bucket is not None else now.hour
-        if self._hour_forecast_start is not None and inp.forecast_remaining_wh is not None:
+        if (
+            self._hour_forecast_start is not None
+            and inp.forecast_remaining_wh is not None
+            and not self._hour_curtailed
+        ):
             forecast_hour_wh = self._hour_forecast_start - inp.forecast_remaining_wh
             if forecast_hour_wh > 50:
                 self.model.learn_forecast(closed_hour, forecast_hour_wh, self._hour_actual_wh)
@@ -343,4 +357,5 @@ class Learner:
         self._hour_actual_wh = 0.0
         self._hour_forecast_start = inp.forecast_remaining_wh
         self._hour_usage_wh = 0.0
+        self._hour_curtailed = False
         return dirty

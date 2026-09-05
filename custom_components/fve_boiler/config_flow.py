@@ -22,6 +22,7 @@ from .const import (
     CONF_BATTERY_SOC,
     CONF_BOILER_POWER,
     CONF_CHEAP_TARIFF,
+    CONF_CURTAIL_SOC,
     CONF_DEADLINE_HOUR,
     CONF_FORECAST_REMAINING,
     CONF_FORECAST_TODAY,
@@ -36,6 +37,7 @@ from .const import (
     CONF_MIN_RUN_MIN,
     CONF_MIN_SOC,
     CONF_MIN_TEMP,
+    CONF_OFFGRID,
     CONF_PV_POWER,
     CONF_RESERVE_SOC,
     CONF_SCAN_INTERVAL,
@@ -148,6 +150,8 @@ def parameters_schema(defaults: dict[str, Any]) -> vol.Schema:
             vol.Required(CONF_DEADLINE_HOUR, default=d(CONF_DEADLINE_HOUR)): _number(
                 0, 23, 1, "h"
             ),
+            vol.Required(CONF_OFFGRID, default=d(CONF_OFFGRID)): selector.BooleanSelector(),
+            vol.Required(CONF_CURTAIL_SOC, default=d(CONF_CURTAIL_SOC)): _number(50, 100, 1, "%"),
             vol.Required(CONF_ALLOW_GRID, default=d(CONF_ALLOW_GRID)): selector.BooleanSelector(),
             vol.Required(CONF_LEGIONELLA_DAY, default=d(CONF_LEGIONELLA_DAY)): _number(
                 0, 30, 1, "dnů"
@@ -164,6 +168,8 @@ def parameters_schema(defaults: dict[str, Any]) -> vol.Schema:
 
 def _validate(user_input: dict[str, Any]) -> dict[str, str]:
     errors: dict[str, str] = {}
+    if user_input.get(CONF_OFFGRID) and user_input[CONF_CURTAIL_SOC] <= user_input[CONF_MIN_SOC]:
+        errors[CONF_CURTAIL_SOC] = "curtail_below_min_soc"
     if user_input[CONF_MIN_TEMP] >= user_input[CONF_TARGET_TEMP]:
         errors[CONF_MIN_TEMP] = "min_above_target"
     elif user_input[CONF_TARGET_TEMP] > user_input[CONF_MAX_TEMP]:

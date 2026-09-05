@@ -45,14 +45,21 @@
           "allow_grid_backup": "Allow grid backup heating",
           "legionella_day": "Anti-legionella interval",
           "legionella_temp": "Anti-legionella temperature",
-          "scan_interval": "Evaluation interval"
+          "scan_interval": "Evaluation interval",
+          "offgrid": "Off-grid operation",
+          "curtail_soc": "SoC at which the inverter curtails production"
+        },
+        "data_description": {
+          "offgrid": "Enable when the inverter is disconnected from the grid. Export and grid backup then do not exist; instead the integration detects that production is being thrown away on a full battery.",
+          "curtail_soc": "Above this level a full battery is taken as proof the inverter is curtailing, and the boiler gets priority over wasted energy."
         }
       }
     },
     "error": {
       "min_above_target": "Minimum temperature must be below the target.",
       "target_above_max": "Target temperature must not exceed the safety maximum.",
-      "reserve_above_min": "Battery reserve must be below the surplus-heating threshold."
+      "reserve_above_min": "Battery reserve must be below the surplus-heating threshold.",
+      "curtail_below_min_soc": "The curtailment threshold must be above the surplus-heating limit."
     },
     "abort": {
       "already_configured": "This instance is already configured."
@@ -104,32 +111,59 @@
           "allow_grid_backup": "Allow grid backup heating",
           "legionella_day": "Anti-legionella interval",
           "legionella_temp": "Anti-legionella temperature",
-          "scan_interval": "Evaluation interval"
+          "scan_interval": "Evaluation interval",
+          "offgrid": "Off-grid operation",
+          "curtail_soc": "SoC at which the inverter curtails production"
+        },
+        "data_description": {
+          "offgrid": "Enable when the inverter is disconnected from the grid. Export and grid backup then do not exist; instead the integration detects that production is being thrown away on a full battery.",
+          "curtail_soc": "Above this level a full battery is taken as proof the inverter is curtailing, and the boiler gets priority over wasted energy."
         }
       }
     },
     "error": {
       "min_above_target": "Minimum temperature must be below the target.",
       "target_above_max": "Target temperature must not exceed the safety maximum.",
-      "reserve_above_min": "Battery reserve must be below the surplus-heating threshold."
+      "reserve_above_min": "Battery reserve must be below the surplus-heating threshold.",
+      "curtail_below_min_soc": "The curtailment threshold must be above the surplus-heating limit."
     }
   },
   "entity": {
     "switch": {
-      "automatika": { "name": "Automation" }
+      "automatika": {
+        "name": "Automation"
+      }
     },
     "binary_sensor": {
-      "topi": { "name": "Heating" },
-      "hrozi_dohrev": { "name": "Grid backup likely" },
-      "ceka_na_slunce": { "name": "Waiting for sun" }
+      "topi": {
+        "name": "Heating"
+      },
+      "hrozi_dohrev": {
+        "name": "Grid backup likely"
+      },
+      "ceka_na_slunce": {
+        "name": "Waiting for sun"
+      }
     },
     "number": {
-      "cilova_teplota": { "name": "Target temperature" },
-      "minimalni_teplota": { "name": "Minimum temperature" },
-      "min_soc_baterie": { "name": "Minimum battery SoC" },
-      "rezerva_baterie": { "name": "Battery reserve" },
-      "nejzazsi_hodina": { "name": "Backup deadline hour" },
-      "prah_startu": { "name": "Start threshold" }
+      "cilova_teplota": {
+        "name": "Target temperature"
+      },
+      "minimalni_teplota": {
+        "name": "Minimum temperature"
+      },
+      "min_soc_baterie": {
+        "name": "Minimum battery SoC"
+      },
+      "rezerva_baterie": {
+        "name": "Battery reserve"
+      },
+      "nejzazsi_hodina": {
+        "name": "Backup deadline hour"
+      },
+      "prah_startu": {
+        "name": "Start threshold"
+      }
     },
     "sensor": {
       "stav": {
@@ -145,22 +179,49 @@
           "ceka_na_slunce": "Waiting for sun",
           "nahrato": "Up to temperature",
           "blokovano": "Blocked",
-          "chybi_data": "Missing data"
+          "chybi_data": "Missing data",
+          "ohrev_z_oriznute_vyroby": "Heating from curtailed production"
         }
       },
-      "potreba_energie": { "name": "Energy needed" },
-      "ocekavany_prebytek": { "name": "Expected surplus until evening" },
-      "volny_vykon": { "name": "Free power" },
-      "doba_ohrevu": { "name": "Heating time needed" },
-      "naucen_prikon": { "name": "Learned heater power" },
-      "naucena_kapacita": { "name": "Learned tank capacity" },
-      "odhad_objemu": { "name": "Estimated tank volume" },
-      "naucene_ztraty": { "name": "Learned standby losses" },
-      "korekce_predpovedi": { "name": "Forecast accuracy" },
-      "duvera_modelu": { "name": "Model confidence" },
-      "ohrev_z_prebytku_celkem": { "name": "Solar heating total" },
-      "ohrev_ze_site_celkem": { "name": "Grid heating total" },
-      "podil_slunce": { "name": "Solar share of heating" }
+      "potreba_energie": {
+        "name": "Energy needed"
+      },
+      "ocekavany_prebytek": {
+        "name": "Expected surplus until evening"
+      },
+      "volny_vykon": {
+        "name": "Free power"
+      },
+      "doba_ohrevu": {
+        "name": "Heating time needed"
+      },
+      "naucen_prikon": {
+        "name": "Learned heater power"
+      },
+      "naucena_kapacita": {
+        "name": "Learned tank capacity"
+      },
+      "odhad_objemu": {
+        "name": "Estimated tank volume"
+      },
+      "naucene_ztraty": {
+        "name": "Learned standby losses"
+      },
+      "korekce_predpovedi": {
+        "name": "Forecast accuracy"
+      },
+      "duvera_modelu": {
+        "name": "Model confidence"
+      },
+      "ohrev_z_prebytku_celkem": {
+        "name": "Solar heating total"
+      },
+      "ohrev_ze_site_celkem": {
+        "name": "Grid heating total"
+      },
+      "podil_slunce": {
+        "name": "Solar share of heating"
+      }
     }
   }
 }

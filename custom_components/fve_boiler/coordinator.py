@@ -28,6 +28,7 @@ from .const import (
     CONF_BATTERY_SOC,
     CONF_BOILER_POWER,
     CONF_CHEAP_TARIFF,
+    CONF_CURTAIL_SOC,
     CONF_DEADLINE_HOUR,
     CONF_FORECAST_REMAINING,
     CONF_FORECAST_TODAY,
@@ -42,6 +43,7 @@ from .const import (
     CONF_MIN_RUN_MIN,
     CONF_MIN_SOC,
     CONF_MIN_TEMP,
+    CONF_OFFGRID,
     CONF_PV_POWER,
     CONF_RESERVE_SOC,
     CONF_SCAN_INTERVAL,
@@ -51,6 +53,7 @@ from .const import (
     CONF_TEMP_SENSOR,
     DEFAULTS,
     DOMAIN,
+    STATE_HEAT_CURTAILED,
     STATE_HEAT_LEGIONELLA,
     STATE_HEAT_SURPLUS,
     STORAGE_KEY_TMPL,
@@ -168,10 +171,13 @@ class FveBoilerCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             min_run_minutes=int(self._opt(CONF_MIN_RUN_MIN)),
             min_off_minutes=int(self._opt(CONF_MIN_OFF_MIN)),
             deadline_hour=int(self._opt(CONF_DEADLINE_HOUR)),
-            allow_grid_backup=bool(self._opt(CONF_ALLOW_GRID)),
+            allow_grid_backup=bool(self._opt(CONF_ALLOW_GRID))
+            and not bool(self._opt(CONF_OFFGRID)),
             battery_capacity_kwh=float(self._opt(CONF_BATTERY_CAPACITY)),
             legionella_days=int(self._opt(CONF_LEGIONELLA_DAY)),
             legionella_temp=float(self._opt(CONF_LEGIONELLA_TEMP)),
+            offgrid=bool(self._opt(CONF_OFFGRID)),
+            curtail_soc=float(self._opt(CONF_CURTAIL_SOC)),
         )
 
     # ------------------------------------------------------------------
@@ -240,8 +246,9 @@ class FveBoilerCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if self.learner.update(
             inp,
             heating_from_surplus=self.decision.state
-            in (STATE_HEAT_SURPLUS, STATE_HEAT_LEGIONELLA),
+            in (STATE_HEAT_SURPLUS, STATE_HEAT_CURTAILED, STATE_HEAT_LEGIONELLA),
             legionella_temp=float(self._opt(CONF_LEGIONELLA_TEMP)),
+            pv_curtailed=self.decision.pv_curtailed,
         ):
             self._dirty = True
 
@@ -267,6 +274,7 @@ class FveBoilerCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "reason": decision.reason,
             "heat": decision.heat,
             "legionella_due": legionella_due,
+            "pv_curtailed": decision.pv_curtailed,
         }
 
     def _legionella_due(self, now: datetime) -> bool:
