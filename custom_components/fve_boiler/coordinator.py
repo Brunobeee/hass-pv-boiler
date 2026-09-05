@@ -65,6 +65,10 @@ from .planner import Decision, Inputs, Settings, decide
 
 _LOGGER = logging.getLogger(__name__)
 
+# převod na základní jednotku; klíč je jednotka, jak ji hlásí entita
+POWER_UNITS: dict[str, float] = {"w": 1.0, "kw": 1000.0, "mw": 1_000_000.0}
+ENERGY_UNITS: dict[str, float] = {"wh": 1.0, "kwh": 1000.0, "mwh": 1_000_000.0}
+
 # nastavení laditelná za běhu přes number entity
 RUNTIME_NUMBERS = (
     CONF_TARGET_TEMP,
@@ -97,6 +101,8 @@ class FveBoilerCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         self.learner = Learner(self.model)
         self._dirty: bool = False
+        # aby se varování o špatné jednotce nelogovalo každých 30 sekund
+        self._unit_warned: set[str] = set()
 
         super().__init__(
             hass,
@@ -183,21 +189,67 @@ class FveBoilerCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     # ------------------------------------------------------------------
     # čtení entit
     # ------------------------------------------------------------------
-    def _read_float(self, key: str, *, scale_kw_to_w: bool = False) -> float | None:
+    def _read_float(self, key: str) -> float | None:
+        """Prostá číselná hodnota (teplota, SoC) bez kontroly jednotek."""
+        state = self._read_state(key)
+        if state is None:
+            return None
+        try:
+            return float(state.state)
+        except (TypeError, ValueError):
+            return None
+
+    def _read_state(self, key: str):
         entity_id = self._conf_entity(key)
         if not entity_id:
             return None
         state = self.hass.states.get(entity_id)
         if state is None or state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE, "", None):
             return None
+        return state
+
+    def _read_scaled(self, key: str, units: dict[str, float], expected: str) -> float | None:
+        """Hodnota převedená na základní jednotku (W, resp. Wh).
+
+        Když entita hlásí jednotku z opačné kategorie - typicky se místo
+        okamžitého výkonu vybere denní součet v kWh - vrátíme None a jednou
+        na to upozorníme. Bez téhle kontroly by se z 12 kWh za den stalo
+        12 000 W trvalé spotřeby a integrace by tiše přestala topit.
+        """
+        state = self._read_state(key)
+        if state is None:
+            return None
         try:
             value = float(state.state)
         except (TypeError, ValueError):
             return None
-        unit = (state.attributes.get("unit_of_measurement") or "").lower()
-        if scale_kw_to_w and unit in ("kw", "kwh"):
-            value *= 1000.0
-        return value
+
+        unit = (state.attributes.get("unit_of_measurement") or "").strip().lower()
+        if unit in units:
+            return value * units[unit]
+        if not unit:
+            # senzor bez jednotky - bereme, že je v základní, a věříme uživateli
+            return value
+
+        if key not in self._unit_warned:
+            self._unit_warned.add(key)
+            _LOGGER.warning(
+                "Entita %s (%s) hlásí jednotku %s, ale očekává se %s. "
+                "Hodnota se ignoruje - zkontrolujte výběr entity v nastavení "
+                "integrace; nejspíš je vybraný součet energie místo okamžitého "
+                "výkonu.",
+                self._conf_entity(key),
+                key,
+                state.attributes.get("unit_of_measurement"),
+                expected,
+            )
+        return None
+
+    def _read_power(self, key: str) -> float | None:
+        return self._read_scaled(key, POWER_UNITS, "výkon (W nebo kW)")
+
+    def _read_energy(self, key: str) -> float | None:
+        return self._read_scaled(key, ENERGY_UNITS, "energie (Wh nebo kWh)")
 
     def _read_bool(self, key: str) -> bool:
         entity_id = self._conf_entity(key)
@@ -215,7 +267,7 @@ class FveBoilerCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return state is not None and state.state == STATE_ON
 
     def _build_inputs(self, now: datetime) -> Inputs:
-        grid = self._read_float(CONF_GRID_POWER, scale_kw_to_w=True)
+        grid = self._read_power(CONF_GRID_POWER)
         if grid is not None and bool(self._opt(CONF_GRID_EXPORT_POSITIVE)):
             # normalizujeme na konvenci "+ = odběr ze sítě"
             grid = -grid
@@ -224,14 +276,14 @@ class FveBoilerCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             heater_on=self.heater_is_on,
             tank_temp=self._read_float(CONF_TEMP_SENSOR),
             ambient_temp=self._read_float(CONF_AMBIENT_TEMP),
-            pv_power_w=self._read_float(CONF_PV_POWER, scale_kw_to_w=True),
+            pv_power_w=self._read_power(CONF_PV_POWER),
             battery_soc=self._read_float(CONF_BATTERY_SOC),
-            battery_power_w=self._read_float(CONF_BATTERY_POWER, scale_kw_to_w=True),
+            battery_power_w=self._read_power(CONF_BATTERY_POWER),
             grid_power_w=grid,
-            house_load_w=self._read_float(CONF_HOUSE_LOAD, scale_kw_to_w=True),
-            boiler_power_w=self._read_float(CONF_BOILER_POWER, scale_kw_to_w=True),
-            forecast_remaining_wh=self._read_float(CONF_FORECAST_REMAINING, scale_kw_to_w=True),
-            forecast_today_wh=self._read_float(CONF_FORECAST_TODAY, scale_kw_to_w=True),
+            house_load_w=self._read_power(CONF_HOUSE_LOAD),
+            boiler_power_w=self._read_power(CONF_BOILER_POWER),
+            forecast_remaining_wh=self._read_energy(CONF_FORECAST_REMAINING),
+            forecast_today_wh=self._read_energy(CONF_FORECAST_TODAY),
             cheap_tariff=self._read_bool(CONF_CHEAP_TARIFF),
         )
 

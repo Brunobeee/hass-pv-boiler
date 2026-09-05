@@ -39,19 +39,25 @@ Přes HACS: *Vlastní repozitáře → tento repozitář → typ Integration*.
 Průvodce má dva kroky. V prvním vyberete entity — všechny z rozbalovacích
 seznamů, nic se nepíše ručně.
 
-| Entita | Povinná | K čemu je |
-|---|---|---|
-| Relé bojleru | ano | Co se spíná (Shelly, `input_boolean`, …) |
-| Teplota v bojleru | ano | Bez ní integrace pro jistotu netopí |
-| Výkon FVE | ano | Aktuální výroba |
-| Výkon na přípojce | ne | **Nejcennější volitelný vstup** — z něj se počítá skutečný přetok |
-| SoC baterie | ne | Bez ní se baterie nehlídá |
-| Výkon baterie | ne | Umožní „ukrást“ výkon mířící do baterie, když je nad limitem |
-| Spotřeba domu | ne | Náhrada, pokud nemáte měření přípojky |
-| Příkon bojleru | ne | Zkrátí učení příkonu spirály ze dnů na minuty |
-| Předpověď — zbývá dnes | ne | `sensor.energy_production_today_remaining` z Forecast.Solar |
-| Teplota u bojleru | ne | Bez ní se nedají naučit tepelné ztráty |
-| Levný tarif / HDO | ne | Povolí dohřev ze sítě jen v levném pásmu |
+| Entita | Povinná | Jednotka | K čemu je |
+|---|---|---|---|
+| Relé bojleru | ano | — | Co se spíná (Shelly, `input_boolean`, …) |
+| Teplota v bojleru | ano | °C | Bez ní integrace pro jistotu netopí |
+| Výkon FVE | ano | **W / kW** | Aktuální výroba |
+| Výkon na přípojce | ne | **W / kW** | **Nejcennější volitelný vstup** — z něj se počítá skutečný přetok |
+| SoC baterie | ne | % | Bez ní se baterie nehlídá |
+| Výkon baterie | ne | **W / kW** | Umožní „ukrást“ výkon mířící do baterie, když je nad limitem |
+| Spotřeba domu | ne | **W / kW** | Náhrada, pokud nemáte měření přípojky. Musí zahrnovat i bojler |
+| Příkon bojleru | ne | **W / kW** | Zkrátí učení příkonu spirály ze dnů na minuty |
+| Předpověď — zbývá dnes | ne | Wh / kWh | `sensor.energy_production_today_remaining` z Forecast.Solar |
+| Teplota u bojleru | ne | °C | Bez ní se nedají naučit tepelné ztráty |
+| Levný tarif / HDO | ne | — | Povolí dohřev ze sítě jen v levném pásmu |
+
+**Výkon, ne energie.** U všech čtyř výkonových vstupů chce integrace okamžitý
+výkon ve wattech, ne kumulativní součet v kWh. Senzory se v HA jmenují
+podobně (*Spotřeba domu* může být obojí), takže je to snadné splést — pokud
+vyberete kWh entitu, integrace ji odmítne a napíše do logu, která entita to je
+a co se od ní čeká. Senzor bez jednotky se bere jako W, resp. Wh.
 
 **Pozor na znaménko u přípojky.** Většina integrací hlásí odběr kladně a
 přetok záporně. Pokud to máte obráceně, zaškrtněte přepínač na konci kroku.

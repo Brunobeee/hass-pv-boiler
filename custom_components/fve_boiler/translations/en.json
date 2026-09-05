@@ -20,11 +20,15 @@
           "grid_export_positive": "Grid sensor reports export as positive"
         },
         "data_description": {
-          "grid_power": "The most valuable optional input - real surplus is derived from it.",
-          "boiler_power": "With it the heater power is learned in minutes instead of days.",
-          "forecast_remaining": "For Forecast.Solar this is sensor.energy_production_today_remaining.",
+          "grid_power": "Instantaneous power in W or kW. The most valuable optional input - real surplus is derived from it. Leave empty when off-grid.",
+          "boiler_power": "Instantaneous power in W or kW. With it the heater power is learned in minutes instead of days.",
+          "forecast_remaining": "Energy in Wh or kWh. For Forecast.Solar this is sensor.energy_production_today_remaining.",
           "ambient_temp": "Without it standby losses cannot be learned reliably.",
-          "grid_export_positive": "Enable if your sensor shows export as positive and import as negative."
+          "grid_export_positive": "Enable if your sensor shows export as positive and import as negative.",
+          "pv_power": "Instantaneous power in W or kW, not daily production in kWh.",
+          "house_load": "Instantaneous whole-house power in W or kW, not daily energy in kWh. Must include the boiler.",
+          "battery_power": "Instantaneous power in W or kW. Positive when charging, negative when discharging.",
+          "forecast_today": "Energy in Wh or kWh for the whole day."
         }
       },
       "parameters": {
@@ -91,6 +95,17 @@
           "ambient_temp": "Ambient temperature around the tank",
           "cheap_tariff": "Cheap tariff signal",
           "grid_export_positive": "Grid sensor reports export as positive"
+        },
+        "data_description": {
+          "pv_power": "Instantaneous power in W or kW, not daily production in kWh.",
+          "house_load": "Instantaneous whole-house power in W or kW, not daily energy in kWh. Must include the boiler.",
+          "battery_power": "Instantaneous power in W or kW. Positive when charging, negative when discharging.",
+          "boiler_power": "Instantaneous power in W or kW. With it the heater power is learned in minutes instead of days.",
+          "grid_power": "Instantaneous power in W or kW. The most valuable optional input - real surplus is derived from it. Leave empty when off-grid.",
+          "forecast_remaining": "Energy in Wh or kWh. For Forecast.Solar this is sensor.energy_production_today_remaining.",
+          "forecast_today": "Energy in Wh or kWh for the whole day.",
+          "ambient_temp": "Without it standby losses cannot be learned reliably.",
+          "grid_export_positive": "Enable if your sensor shows export as positive and import as negative."
         }
       },
       "parameters": {

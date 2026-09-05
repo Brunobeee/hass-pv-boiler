@@ -20,11 +20,15 @@
           "grid_export_positive": "Na přípojce je dodávka do sítě kladná"
         },
         "data_description": {
-          "grid_power": "Nejdůležitější volitelný vstup - z něj se počítá skutečný přebytek.",
-          "boiler_power": "Když ho vyplníte, integrace se naučí přesný příkon spirály během pár minut místo pár dnů.",
-          "forecast_remaining": "U Forecast.Solar je to sensor.energy_production_today_remaining.",
+          "grid_power": "Okamžitý výkon ve W nebo kW. Nejdůležitější volitelný vstup - z něj se počítá skutečný přebytek. V ostrovním provozu nechte prázdné.",
+          "boiler_power": "Okamžitý příkon ve W nebo kW. Když ho vyplníte, integrace se naučí přesný příkon spirály během pár minut místo pár dnů.",
+          "forecast_remaining": "Energie ve Wh nebo kWh. U Forecast.Solar je to sensor.energy_production_today_remaining.",
           "ambient_temp": "Bez ní se nedají spolehlivě naučit tepelné ztráty nádrže.",
-          "grid_export_positive": "Zapněte, pokud váš senzor ukazuje přetok kladně a odběr záporně. Většina integrací to má obráceně."
+          "grid_export_positive": "Zapněte, pokud váš senzor ukazuje přetok kladně a odběr záporně. Většina integrací to má obráceně.",
+          "pv_power": "Okamžitý výkon ve W nebo kW, ne denní výroba v kWh.",
+          "house_load": "Okamžitý příkon celého domu ve W nebo kW, ne denní spotřeba v kWh. Musí zahrnovat i bojler.",
+          "battery_power": "Okamžitý výkon ve W nebo kW. Kladně nabíjení, záporně vybíjení.",
+          "forecast_today": "Energie ve Wh nebo kWh za celý dnešek."
         }
       },
       "parameters": {
@@ -97,6 +101,17 @@
           "ambient_temp": "Teplota v místnosti s bojlerem",
           "cheap_tariff": "Levný tarif / HDO",
           "grid_export_positive": "Na přípojce je dodávka do sítě kladná"
+        },
+        "data_description": {
+          "pv_power": "Okamžitý výkon ve W nebo kW, ne denní výroba v kWh.",
+          "house_load": "Okamžitý příkon celého domu ve W nebo kW, ne denní spotřeba v kWh. Musí zahrnovat i bojler.",
+          "battery_power": "Okamžitý výkon ve W nebo kW. Kladně nabíjení, záporně vybíjení.",
+          "boiler_power": "Okamžitý příkon ve W nebo kW. Když ho vyplníte, integrace se naučí přesný příkon spirály během pár minut místo pár dnů.",
+          "grid_power": "Okamžitý výkon ve W nebo kW. Nejdůležitější volitelný vstup - z něj se počítá skutečný přebytek. V ostrovním provozu nechte prázdné.",
+          "forecast_remaining": "Energie ve Wh nebo kWh. U Forecast.Solar je to sensor.energy_production_today_remaining.",
+          "forecast_today": "Energie ve Wh nebo kWh za celý dnešek.",
+          "ambient_temp": "Bez ní se nedají spolehlivě naučit tepelné ztráty nádrže.",
+          "grid_export_positive": "Zapněte, pokud váš senzor ukazuje přetok kladně a odběr záporně. Většina integrací to má obráceně."
         }
       },
       "parameters": {
