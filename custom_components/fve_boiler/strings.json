@@ -1,0 +1,166 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Entity mapping",
+        "description": "Pick the entities the integration should work with. Only the boiler relay, the temperature sensor and PV power are required - every optional input makes the learned model sharper.",
+        "data": {
+          "heater_switch": "Boiler relay",
+          "temp_sensor": "Water temperature in the tank",
+          "pv_power": "Current PV power",
+          "battery_soc": "Battery state of charge (%)",
+          "battery_power": "Battery power (+ charging)",
+          "grid_power": "Grid power",
+          "house_load": "Total house consumption",
+          "boiler_power": "Measured boiler power",
+          "forecast_remaining": "Forecast - remaining production today",
+          "forecast_today": "Forecast - total today",
+          "ambient_temp": "Ambient temperature around the tank",
+          "cheap_tariff": "Cheap tariff signal",
+          "grid_export_positive": "Grid sensor reports export as positive"
+        },
+        "data_description": {
+          "grid_power": "The most valuable optional input - real surplus is derived from it.",
+          "boiler_power": "With it the heater power is learned in minutes instead of days.",
+          "forecast_remaining": "For Forecast.Solar this is sensor.energy_production_today_remaining.",
+          "ambient_temp": "Without it standby losses cannot be learned reliably.",
+          "grid_export_positive": "Enable if your sensor shows export as positive and import as negative."
+        }
+      },
+      "parameters": {
+        "title": "Operating parameters",
+        "description": "Temperatures, battery limits and timing. Everything can be fine-tuned later with sliders.",
+        "data": {
+          "target_temp": "Target temperature (surplus heating)",
+          "min_temp": "Minimum comfort temperature",
+          "max_temp": "Safety maximum",
+          "temp_hysteresis": "Hysteresis",
+          "min_soc": "Battery must be above (surplus heating)",
+          "reserve_soc": "Battery reserve (never heat below)",
+          "battery_capacity_kwh": "Battery capacity",
+          "start_threshold": "Start threshold (fraction of heater power)",
+          "min_run_minutes": "Minimum run time",
+          "min_off_minutes": "Minimum off time",
+          "deadline_hour": "Latest hour for backup heating",
+          "allow_grid_backup": "Allow grid backup heating",
+          "legionella_day": "Anti-legionella interval",
+          "legionella_temp": "Anti-legionella temperature",
+          "scan_interval": "Evaluation interval"
+        }
+      }
+    },
+    "error": {
+      "min_above_target": "Minimum temperature must be below the target.",
+      "target_above_max": "Target temperature must not exceed the safety maximum.",
+      "reserve_above_min": "Battery reserve must be below the surplus-heating threshold."
+    },
+    "abort": {
+      "already_configured": "This instance is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "PV Boiler",
+        "menu_options": {
+          "entities": "Change mapped entities",
+          "parameters": "Change operating parameters"
+        }
+      },
+      "entities": {
+        "title": "Entity mapping",
+        "description": "Clearing a field disables that input.",
+        "data": {
+          "heater_switch": "Boiler relay",
+          "temp_sensor": "Water temperature in the tank",
+          "pv_power": "Current PV power",
+          "battery_soc": "Battery state of charge (%)",
+          "battery_power": "Battery power (+ charging)",
+          "grid_power": "Grid power",
+          "house_load": "Total house consumption",
+          "boiler_power": "Measured boiler power",
+          "forecast_remaining": "Forecast - remaining production today",
+          "forecast_today": "Forecast - total today",
+          "ambient_temp": "Ambient temperature around the tank",
+          "cheap_tariff": "Cheap tariff signal",
+          "grid_export_positive": "Grid sensor reports export as positive"
+        }
+      },
+      "parameters": {
+        "title": "Operating parameters",
+        "description": "Saving also overrides values tuned with the sliders.",
+        "data": {
+          "target_temp": "Target temperature (surplus heating)",
+          "min_temp": "Minimum comfort temperature",
+          "max_temp": "Safety maximum",
+          "temp_hysteresis": "Hysteresis",
+          "min_soc": "Battery must be above (surplus heating)",
+          "reserve_soc": "Battery reserve (never heat below)",
+          "battery_capacity_kwh": "Battery capacity",
+          "start_threshold": "Start threshold (fraction of heater power)",
+          "min_run_minutes": "Minimum run time",
+          "min_off_minutes": "Minimum off time",
+          "deadline_hour": "Latest hour for backup heating",
+          "allow_grid_backup": "Allow grid backup heating",
+          "legionella_day": "Anti-legionella interval",
+          "legionella_temp": "Anti-legionella temperature",
+          "scan_interval": "Evaluation interval"
+        }
+      }
+    },
+    "error": {
+      "min_above_target": "Minimum temperature must be below the target.",
+      "target_above_max": "Target temperature must not exceed the safety maximum.",
+      "reserve_above_min": "Battery reserve must be below the surplus-heating threshold."
+    }
+  },
+  "entity": {
+    "switch": {
+      "automatika": { "name": "Automation" }
+    },
+    "binary_sensor": {
+      "topi": { "name": "Heating" },
+      "hrozi_dohrev": { "name": "Grid backup likely" },
+      "ceka_na_slunce": { "name": "Waiting for sun" }
+    },
+    "number": {
+      "cilova_teplota": { "name": "Target temperature" },
+      "minimalni_teplota": { "name": "Minimum temperature" },
+      "min_soc_baterie": { "name": "Minimum battery SoC" },
+      "rezerva_baterie": { "name": "Battery reserve" },
+      "nejzazsi_hodina": { "name": "Backup deadline hour" },
+      "prah_startu": { "name": "Start threshold" }
+    },
+    "sensor": {
+      "stav": {
+        "name": "State",
+        "state": {
+          "vypnuto": "Off",
+          "necinnost": "Idle",
+          "ohrev_z_prebytku": "Heating from surplus",
+          "ohrev_z_baterie": "Heating from battery",
+          "nouzovy_ohrev": "Grid backup heating",
+          "antilegionella": "Anti-legionella",
+          "rucni_boost": "Manual boost",
+          "ceka_na_slunce": "Waiting for sun",
+          "nahrato": "Up to temperature",
+          "blokovano": "Blocked",
+          "chybi_data": "Missing data"
+        }
+      },
+      "potreba_energie": { "name": "Energy needed" },
+      "ocekavany_prebytek": { "name": "Expected surplus until evening" },
+      "volny_vykon": { "name": "Free power" },
+      "doba_ohrevu": { "name": "Heating time needed" },
+      "naucen_prikon": { "name": "Learned heater power" },
+      "naucena_kapacita": { "name": "Learned tank capacity" },
+      "odhad_objemu": { "name": "Estimated tank volume" },
+      "naucene_ztraty": { "name": "Learned standby losses" },
+      "korekce_predpovedi": { "name": "Forecast accuracy" },
+      "duvera_modelu": { "name": "Model confidence" },
+      "ohrev_z_prebytku_celkem": { "name": "Solar heating total" },
+      "ohrev_ze_site_celkem": { "name": "Grid heating total" },
+      "podil_slunce": { "name": "Solar share of heating" }
+    }
+  }
+}

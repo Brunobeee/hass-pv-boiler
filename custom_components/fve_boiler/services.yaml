@@ -1,0 +1,91 @@
+boost:
+  name: Ruční boost
+  description: >-
+    Dočasně nahřeje bojler bez ohledu na přebytek - hodí se před návštěvou
+    nebo když je venku týden mlha.
+  fields:
+    entry_id:
+      name: Instance
+      description: ID konfigurační položky. Nevyplněno = všechny instance.
+      required: false
+      selector:
+        text:
+    duration:
+      name: Doba
+      description: Jak dlouho má boost platit.
+      required: false
+      default: 60
+      selector:
+        number:
+          min: 1
+          max: 720
+          unit_of_measurement: min
+    target_temp:
+      name: Cílová teplota
+      description: Nevyplněno = použije se běžná cílová teplota.
+      required: false
+      selector:
+        number:
+          min: 20
+          max: 90
+          unit_of_measurement: "°C"
+
+reset_learning:
+  name: Vynulovat učení
+  description: >-
+    Zahodí celý naučený model (kapacitu nádrže, ztráty, profil odběru,
+    korekci předpovědi) a začne se učit od nuly.
+  fields:
+    entry_id:
+      name: Instance
+      description: ID konfigurační položky. Nevyplněno = všechny instance.
+      required: false
+      selector:
+        text:
+
+set_model:
+  name: Nastavit parametry modelu
+  description: >-
+    Ručně předvyplní parametry, které model jinak zjišťuje sám. Užitečné
+    hned po instalaci - učení pak startuje z rozumných hodnot místo odhadu.
+  fields:
+    entry_id:
+      name: Instance
+      required: false
+      selector:
+        text:
+    heater_power_w:
+      name: Příkon topné spirály
+      required: false
+      selector:
+        number:
+          min: 300
+          max: 12000
+          unit_of_measurement: W
+    tank_liters:
+      name: Objem nádrže
+      description: Přepočte se na tepelnou kapacitu (1 l ≈ 1,163 Wh/K).
+      required: false
+      selector:
+        number:
+          min: 20
+          max: 1000
+          unit_of_measurement: L
+    tank_wh_per_k:
+      name: Tepelná kapacita
+      description: Alternativa k objemu, pokud ji znáte přesně.
+      required: false
+      selector:
+        number:
+          min: 40
+          max: 900
+          unit_of_measurement: Wh/K
+    loss_w_per_k:
+      name: Tepelné ztráty
+      required: false
+      selector:
+        number:
+          min: 0.05
+          max: 12
+          step: 0.05
+          unit_of_measurement: W/K

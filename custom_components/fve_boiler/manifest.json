@@ -1,0 +1,18 @@
+{
+  "domain": "fve_boiler",
+  "name": "FVE Bojler",
+  "version": "1.0.0",
+  "documentation": "https://github.com/Brunobeee/hass-pv-boiler",
+  "issue_tracker": "https://github.com/Brunobeee/hass-pv-boiler/issues",
+  "codeowners": [
+    "@Brunobeee"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "after_dependencies": [
+    "forecast_solar"
+  ],
+  "requirements": [],
+  "iot_class": "calculated",
+  "integration_type": "service"
+}

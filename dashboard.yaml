@@ -1,0 +1,75 @@
+# Hotová karta na dashboard. Vlož přes "Přidat kartu" -> "Ručně" a zkopíruj sem.
+#
+# Entity ID níže platí pro Home Assistant s češtinou. Když máš HA v angličtině,
+# vzniknou anglické názvy (sensor.fve_bojler_state místo _stav). Nejrychlejší
+# oprava: v Nástroje pro vývojáře -> Stavy si vyfiltruj "fve_bojler" a názvy
+# doplň podle skutečnosti. Při více instancích integrace přibude suffix _2.
+type: vertical-stack
+cards:
+  - type: heading
+    heading: Bojler z fotovoltaiky
+    heading_style: title
+
+  - type: entities
+    entities:
+      - entity: sensor.fve_bojler_stav
+        name: Co se právě děje
+        secondary_info: last-changed
+      - type: attribute
+        entity: sensor.fve_bojler_stav
+        attribute: duvod
+        name: Proč
+      - entity: switch.fve_bojler_automatika
+        name: Automatika
+      - entity: binary_sensor.fve_bojler_topi
+        name: Spirála
+      - entity: binary_sensor.fve_bojler_hrozi_dohrev
+        name: Hrozí dohřev ze sítě
+
+  - type: glance
+    columns: 3
+    entities:
+      - entity: sensor.fve_bojler_potreba_energie
+        name: Potřeba
+      - entity: sensor.fve_bojler_ocekavany_prebytek
+        name: Čekaný přebytek
+      - entity: sensor.fve_bojler_volny_vykon
+        name: Volný výkon
+      - entity: sensor.fve_bojler_doba_ohrevu
+        name: Doba ohřevu
+      - entity: sensor.fve_bojler_podil_slunce
+        name: Podíl slunce
+      - entity: sensor.fve_bojler_duvera_modelu
+        name: Naučenost
+
+  - type: entities
+    title: Nastavení
+    entities:
+      - entity: number.fve_bojler_cilova_teplota
+      - entity: number.fve_bojler_minimalni_teplota
+      - entity: number.fve_bojler_min_soc_baterie
+      - type: call-service
+        name: Ruční boost
+        icon: mdi:fire
+        action_name: Nahřát hodinu
+        service: fve_boiler.boost
+        service_data:
+          duration: 60
+
+  - type: history-graph
+    hours_to_show: 48
+    title: Průběh
+    entities:
+      - entity: binary_sensor.fve_bojler_topi
+      - entity: sensor.fve_bojler_stav
+
+  - type: entities
+    title: Co se model naučil
+    entities:
+      - entity: sensor.fve_bojler_naucen_prikon
+      - entity: sensor.fve_bojler_naucena_kapacita
+      - entity: sensor.fve_bojler_odhad_objemu
+      - entity: sensor.fve_bojler_naucene_ztraty
+      - entity: sensor.fve_bojler_korekce_predpovedi
+      - entity: sensor.fve_bojler_ohrev_z_prebytku_celkem
+      - entity: sensor.fve_bojler_ohrev_ze_site_celkem
